@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷蒙标题生成大师</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 迷蒙标题生成大师</h1>
+            <p>基于咪蒙方法论，生成10万+爆款标题</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <div class="tab-container">
+                    <button class="tab-btn active" data-tab="file">📄 上传文件</button>
+                    <button class="tab-btn" data-tab="url">🔗 在线链接</button>
+                    <button class="tab-btn" data-tab="text">✏️ 直接输入</button>
+                </div>
+
+                <div class="tab-content active" id="file-tab">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <p>拖拽文件到此处或点击选择文件</p>
+                        <p class="file-types">支持：PDF、Word、TXT、Markdown</p>
+                        <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.md" hidden>
+                    </div>
+                    <div class="file-info" id="file-info" style="display: none;">
+                        <div class="file-name"></div>
+                        <div class="file-size"></div>
+                        <button class="remove-file" id="remove-file">移除文件</button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="url-tab">
+                    <div class="input-group">
+                        <label for="url-input">文章链接</label>
+                        <input type="url" id="url-input" placeholder="请输入文章的在线链接..." />
+                    </div>
+                </div>
+
+                <div class="tab-content" id="text-tab">
+                    <div class="input-group">
+                        <label for="text-input">文章内容</label>
+                        <textarea id="text-input" placeholder="请直接粘贴文章内容..." rows="10"></textarea>
+                    </div>
+                </div>
+
+                <button class="generate-btn" id="generate-btn">
+                    <span class="btn-text">生成爆款标题</span>
+                    <span class="loading" style="display: none;">生成中...</span>
+                </button>
+            </div>
+
+            <div class="result-section" id="result-section" style="display: none;">
+                <h2>🎯 生成的标题</h2>
+                <div class="titles-container" id="titles-container">
+                    <!-- 标题结果将在这里显示 -->
+                </div>
+                <div class="generate-again">
+                    <button class="secondary-btn" id="generate-again-btn">重新生成</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>基于咪蒙标题方法论 • 使用DeepSeek V3.1 API</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="script.js"></script>
+</body>
+</html>

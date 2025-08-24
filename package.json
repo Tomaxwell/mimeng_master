@@ -1,0 +1,38 @@
+{
+  "name": "mimeng-title-generator",
+  "version": "1.0.0",
+  "description": "迷蒙标题生成大师 - 基于咪蒙方法论的标题生成工具",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required'",
+    "postinstall": "echo 'Installation complete'"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "axios": "^1.6.2",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "title-generator",
+    "mimeng",
+    "deepseek",
+    "ai",
+    "content"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

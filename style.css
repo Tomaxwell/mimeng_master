@@ -1,0 +1,392 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(135deg, #ff6b6b, #ffa726);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+main {
+    padding: 40px;
+}
+
+.tab-container {
+    display: flex;
+    margin-bottom: 30px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.tab-btn.active {
+    background: white;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tab-content {
+    display: none;
+    margin-bottom: 30px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.upload-area {
+    border: 3px dashed #ddd;
+    border-radius: 15px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.upload-area.dragover {
+    border-color: #667eea;
+    background: #e8f0ff;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.upload-area p {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.file-types {
+    font-size: 0.9rem;
+    color: #999;
+}
+
+.file-info {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.file-size {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.remove-file {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.remove-file:hover {
+    background: #ff3742;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.input-group input,
+.input-group textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.input-group textarea {
+    resize: vertical;
+    min-height: 200px;
+    font-family: inherit;
+}
+
+.generate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.generate-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loading {
+    display: none;
+}
+
+.result-section {
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.result-section h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+.title-item {
+    background: white;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.title-item:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.title-item.copied {
+    border-color: #2ed573;
+    background: #f0fff4;
+    animation: copyPulse 0.5s ease;
+}
+
+@keyframes copyPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.title-header {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.title-text {
+    flex: 1;
+}
+
+.copy-icon {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    color: #667eea;
+    margin-left: 10px;
+    font-size: 1.1rem;
+}
+
+.title-item:hover .copy-icon {
+    opacity: 1;
+}
+
+.title-rank {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b6b, #ffa726);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+.title-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.title-method {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.title-analysis {
+    color: #666;
+    line-height: 1.5;
+}
+
+.generate-again {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.secondary-btn {
+    background: #f8f9fa;
+    color: #333;
+    border: 2px solid #e1e5e9;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-btn:hover {
+    background: #e9ecef;
+    border-color: #667eea;
+}
+
+footer {
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    opacity: 0.8;
+}
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.error {
+    background: #ff4757;
+}
+
+.toast.success {
+    background: #2ed573;
+}
+
+@media (max-width: 768px) {
+    .container {
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    header {
+        padding: 30px 20px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .tab-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .upload-area {
+        padding: 40px 20px;
+    }
+    
+    .file-info {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+}

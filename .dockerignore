@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.production
+uploads
+.git
+.gitignore
+README.md
+使用说明.md
+start.bat
+.vscode
+.idea
