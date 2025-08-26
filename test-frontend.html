@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { padding: 10px 20px; margin: 5px; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>前端API测试</h1>
+    
+    <div>
+        <h2>1. 服务器健康检查</h2>
+        <button onclick="testHealth()">测试健康检查</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div>
+        <h2>2. 标题生成测试</h2>
+        <textarea id="test-content" placeholder="输入测试内容...">
+最近，一项关于年轻人消费习惯的调查引起了社会的广泛关注。调查显示，90后和00后在消费观念上呈现出截然不同的特点。他们更愿意为品质和体验买单，而不是盲目追求名牌。这种消费观念的转变，反映了新一代年轻人的价值观念变化。专家认为，这将对未来的消费市场产生深远影响。
+        </textarea>
+        <br>
+        <button onclick="testTitleGeneration()">测试标题生成</button>
+        <div id="title-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 健康检查成功<br>状态: ${data.status}<br>时间: ${data.timestamp}`;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 健康检查失败: ${error.message}`;
+            }
+        }
+        
+        async function testTitleGeneration() {
+            const content = document.getElementById('test-content').value;
+            const resultDiv = document.getElementById('title-result');
+            resultDiv.innerHTML = '生成中...';
+            
+            console.log('开始测试标题生成');
+            console.log('内容:', content);
+            
+            try {
+                const response = await fetch('/api/generate-titles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                
+                console.log('响应状态:', response.status);
+                
+                const responseText = await response.text();
+                console.log('响应内容:', responseText);
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    resultDiv.className = 'result success';
+                    let html = `✅ 标题生成成功<br>数量: ${data.titles.length}<br><br>`;
+                    data.titles.forEach((title, i) => {
+                        html += `<strong>${i+1}. ${title.title}</strong><br>`;
+                        html += `方法: ${title.method}<br>`;
+                        html += `分析: ${title.analysis}<br><br>`;
+                    });
+                    resultDiv.innerHTML = html;
+                } else {
+                    const errorData = JSON.parse(responseText);
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('错误:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 标题生成失败: ${error.message}`;
+            }
+        }
+        
+        // 页面加载时自动测试健康检查
+        window.addEventListener('load', testHealth);
+    </script>
+</body>
+</html>

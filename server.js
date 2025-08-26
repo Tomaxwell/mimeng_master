@@ -4,7 +4,43 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const axios = require('axios');
+
+// 加载环境变量
 require('dotenv').config();
+
+// 环境变量检查
+function checkEnvironment() {
+    const requiredVars = ['DEEPSEEK_API_KEY'];
+    const missingVars = [];
+    
+    for (const varName of requiredVars) {
+        if (!process.env[varName]) {
+            missingVars.push(varName);
+        }
+    }
+    
+    if (missingVars.length > 0) {
+        console.error('❌ 缺少必需的环境变量:');
+        missingVars.forEach(varName => {
+            console.error(`   - ${varName}`);
+        });
+        console.log('\n💡 解决方案:');
+        console.log('   1. 检查 .env 文件是否存在');
+        console.log('   2. 确认 .env 文件中已设置所有必需变量');
+        console.log('   3. 重新启动服务器');
+        return false;
+    }
+    
+    return true;
+}
+
+// 启动前检查
+if (!checkEnvironment()) {
+    console.log('\n📋 .env 文件示例:');
+    console.log('DEEPSEEK_API_KEY=your_api_key_here');
+    console.log('PORT=3000');
+    process.exit(1);
+}
 
 const { extractPdfContent } = require('./utils/pdfExtractor');
 const { extractWordContent } = require('./utils/wordExtractor');
@@ -164,6 +200,16 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// 调试页面
+app.get('/debug', (req, res) => {
+    res.sendFile(path.join(__dirname, 'debug.html'));
+});
+
+// 前端测试页面
+app.get('/test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-frontend.html'));
+});
+
 // 错误处理中间件
 app.use((error, req, res, next) => {
     console.error('服务器错误:', error);
@@ -179,7 +225,47 @@ app.use((error, req, res, next) => {
 });
 
 // 启动服务器
-app.listen(PORT, () => {
-    console.log(`服务器运行在 http://localhost:${PORT}`);
-    console.log('请确保设置了 DEEPSEEK_API_KEY 环境变量');
+const server = app.listen(PORT, () => {
+    console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+    console.log('📋 请确保设置了 DEEPSEEK_API_KEY 环境变量');
+    console.log('🔧 如需停止服务器，请按 Ctrl+C');
+});
+
+// 处理端口占用错误
+server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`❌ 端口 ${PORT} 已被占用`);
+        console.log('💡 解决方案：');
+        console.log(`   1. 使用不同端口：SET PORT=3001 && npm start`);
+        console.log(`   2. 或结束占用端口的进程`);
+        process.exit(1);
+    } else {
+        console.error('❌ 服务器启动错误:', error);
+        process.exit(1);
+    }
+});
+
+// 优雅关闭
+process.on('SIGINT', () => {
+    console.log('\n🛑 正在关闭服务器...');
+    server.close((err) => {
+        if (err) {
+            console.error('❌ 关闭服务器时出错:', err);
+            process.exit(1);
+        }
+        console.log('✅ 服务器已安全关闭');
+        process.exit(0);
+    });
+});
+
+process.on('SIGTERM', () => {
+    console.log('\n🛑 收到终止信号，正在关闭服务器...');
+    server.close((err) => {
+        if (err) {
+            console.error('❌ 关闭服务器时出错:', err);
+            process.exit(1);
+        }
+        console.log('✅ 服务器已安全关闭');
+        process.exit(0);
+    });
 });

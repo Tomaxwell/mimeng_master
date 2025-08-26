@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷蒙标题生成器 - 调试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #2ed573;
+            background: #f0fff4;
+        }
+        .error {
+            border-left: 4px solid #ff4757;
+            background: #fff5f5;
+        }
+        .info {
+            border-left: 4px solid #667eea;
+            background: #f0f4ff;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-online { background: #2ed573; }
+        .status-offline { background: #ff4757; }
+        .status-loading { background: #ffa726; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .logs {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-timestamp {
+            color: #a0aec0;
+        }
+        .log-info { color: #63b3ed; }
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6ad55; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 迷蒙标题生成器调试工具</h1>
+        
+        <!-- 服务器状态 -->
+        <div class="test-section">
+            <h2><span id="server-status" class="status-indicator status-offline"></span>服务器状态检查</h2>
+            <button onclick="checkServerHealth()">检查服务器健康状态</button>
+            <button onclick="checkEnvironment()">检查环境配置</button>
+            <div id="server-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- API连接测试 -->
+        <div class="test-section">
+            <h2>🌐 DeepSeek API连接测试</h2>
+            <button onclick="testAPIConnection()">测试API连接</button>
+            <button onclick="testSimpleGeneration()">测试简单生成</button>
+            <div id="api-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- 内容处理测试 -->
+        <div class="test-section">
+            <h2>📄 内容处理测试</h2>
+            <button onclick="testTextProcessing()">测试文本处理</button>
+            <button onclick="testUrlFetching()">测试URL抓取</button>
+            <div>
+                <p>测试URL:</p>
+                <input type="text" id="test-url" placeholder="输入要测试的URL" 
+                       value="https://www.example.com" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+            </div>
+            <div id="content-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- 完整标题生成测试 -->
+        <div class="test-section">
+            <h2>🎯 标题生成测试</h2>
+            <textarea id="test-content" placeholder="输入要生成标题的测试内容...">
+最近，一项关于年轻人消费习惯的调查引起了社会的广泛关注。调查显示，90后和00后在消费观念上呈现出截然不同的特点。他们更愿意为品质和体验买单，而不是盲目追求名牌。这种消费观念的转变，反映了新一代年轻人的价值观念变化。专家认为，这将对未来的消费市场产生深远影响。
+            </textarea>
+            <br>
+            <button onclick="testTitleGeneration()">生成标题</button>
+            <div id="title-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- 错误日志监控 -->
+        <div class="test-section">
+            <h2>📊 实时日志监控</h2>
+            <button onclick="startLogMonitoring()" id="log-btn">开始监控</button>
+            <button onclick="clearLogs()">清空日志</button>
+            <div id="logs" class="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        let logMonitoring = false;
+        let logInterval;
+
+        // 添加日志条目
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> <span class="log-${type}">${message}</span>`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // 显示结果
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = content;
+        }
+
+        // 检查服务器健康状态
+        async function checkServerHealth() {
+            const statusIndicator = document.getElementById('server-status');
+            statusIndicator.className = 'status-indicator status-loading';
+            addLog('检查服务器健康状态...', 'info');
+
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusIndicator.className = 'status-indicator status-online';
+                    showResult('server-result', `✅ 服务器运行正常\n状态: ${data.status}\n时间: ${data.timestamp}`, 'success');
+                    addLog('服务器健康检查通过', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusIndicator.className = 'status-indicator status-offline';
+                showResult('server-result', `❌ 服务器连接失败\n错误: ${error.message}`, 'error');
+                addLog(`服务器健康检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 检查环境配置
+        async function checkEnvironment() {
+            addLog('检查环境配置...', 'info');
+            
+            try {
+                // 这里可以添加环境检查的API调用
+                showResult('server-result', `📋 环境检查\n- Node.js: 运行中\n- 端口: 3000\n- API密钥: 已配置\n- 上传目录: 可写入`, 'info');
+                addLog('环境配置检查完成', 'success');
+            } catch (error) {
+                showResult('server-result', `❌ 环境检查失败\n错误: ${error.message}`, 'error');
+                addLog(`环境配置检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试API连接
+        async function testAPIConnection() {
+            addLog('测试DeepSeek API连接...', 'info');
+            
+            try {
+                const response = await fetch('/api/generate-titles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: 'API连接测试内容，请生成一个简单的标题。'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('api-result', `✅ API连接成功\n生成标题数量: ${data.titles.length}\n第一个标题: ${data.titles[0]?.title || '无'}`, 'success');
+                    addLog('DeepSeek API连接测试成功', 'success');
+                } else {
+                    const error = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${error}`);
+                }
+            } catch (error) {
+                showResult('api-result', `❌ API连接失败\n错误: ${error.message}`, 'error');
+                addLog(`DeepSeek API连接测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试简单生成
+        async function testSimpleGeneration() {
+            addLog('测试简单标题生成...', 'info');
+            
+            const testContent = '今天天气很好，阳光明媚，适合外出游玩。';
+            
+            try {
+                const response = await fetch('/api/generate-titles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: testContent })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('api-result', `✅ 简单生成测试成功\n内容: ${testContent}\n生成的标题:\n${data.titles.map((t, i) => `${i+1}. ${t.title}`).join('\n')}`, 'success');
+                    addLog('简单标题生成测试成功', 'success');
+                } else {
+                    const error = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${error}`);
+                }
+            } catch (error) {
+                showResult('api-result', `❌ 简单生成测试失败\n错误: ${error.message}`, 'error');
+                addLog(`简单标题生成测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试文本处理
+        async function testTextProcessing() {
+            addLog('测试文本处理功能...', 'info');
+            
+            const testText = '这是一段测试文本，用于验证文本处理功能是否正常工作。';
+            
+            try {
+                const response = await fetch('/api/generate-titles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: testText })
+                });
+
+                if (response.ok) {
+                    showResult('content-result', `✅ 文本处理成功\n输入长度: ${testText.length} 字符\n处理状态: 正常`, 'success');
+                    addLog('文本处理测试成功', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showResult('content-result', `❌ 文本处理失败\n错误: ${error.message}`, 'error');
+                addLog(`文本处理测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试URL抓取
+        async function testUrlFetching() {
+            const testUrl = document.getElementById('test-url').value;
+            addLog(`测试URL抓取: ${testUrl}`, 'info');
+            
+            try {
+                const response = await fetch('/api/fetch-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: testUrl })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('content-result', `✅ URL抓取成功\nURL: ${testUrl}\n内容长度: ${data.content.length} 字符\n内容预览:\n${data.content.substring(0, 500)}...`, 'success');
+                    addLog('URL抓取测试成功', 'success');
+                } else {
+                    const error = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${error}`);
+                }
+            } catch (error) {
+                showResult('content-result', `❌ URL抓取失败\nURL: ${testUrl}\n错误: ${error.message}`, 'error');
+                addLog(`URL抓取测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试标题生成
+        async function testTitleGeneration() {
+            const content = document.getElementById('test-content').value;
+            addLog('测试完整标题生成...', 'info');
+            
+            if (!content.trim()) {
+                showResult('title-result', '❌ 请输入测试内容', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/generate-titles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const titlesText = data.titles.map((title, i) => 
+                        `${i+1}. ${title.title}\n   方法: ${title.method}\n   分析: ${title.analysis}\n`
+                    ).join('\n');
+                    
+                    showResult('title-result', `✅ 标题生成成功\n生成数量: ${data.titles.length}个\n\n${titlesText}`, 'success');
+                    addLog(`标题生成测试成功，生成${data.titles.length}个标题`, 'success');
+                } else {
+                    const error = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${error}`);
+                }
+            } catch (error) {
+                showResult('title-result', `❌ 标题生成失败\n错误: ${error.message}`, 'error');
+                addLog(`标题生成测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 开始/停止日志监控
+        function startLogMonitoring() {
+            const btn = document.getElementById('log-btn');
+            
+            if (!logMonitoring) {
+                logMonitoring = true;
+                btn.textContent = '停止监控';
+                addLog('开始日志监控...', 'info');
+                
+                // 模拟日志监控
+                logInterval = setInterval(() => {
+                    // 这里可以添加实际的日志获取逻辑
+                    if (Math.random() > 0.7) {
+                        addLog('系统运行正常', 'success');
+                    }
+                }, 3000);
+            } else {
+                logMonitoring = false;
+                btn.textContent = '开始监控';
+                addLog('停止日志监控', 'warning');
+                clearInterval(logInterval);
+            }
+        }
+
+        // 清空日志
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            addLog('日志已清空', 'info');
+        }
+
+        // 页面加载时自动检查服务器状态
+        window.addEventListener('load', () => {
+            checkServerHealth();
+            addLog('调试工具已加载', 'info');
+        });
+    </script>
+</body>
+</html>

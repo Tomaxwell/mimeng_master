@@ -157,20 +157,41 @@ class TitleGenerator {
                 }
             }
 
-            if (!content) {
-                this.showToast('未能获取到有效内容', 'error');
+            if (!content || content.length < 50) {
+                this.showToast('内容太短，请提供至少50个字符的内容', 'error');
                 return;
             }
 
             this.setLoading(true);
             const titles = await this.callTitleGenerationAPI(content);
+            
+            if (!titles || titles.length === 0) {
+                throw new Error('未能生成有效标题，请稍后重试');
+            }
+            
             this.displayTitles(titles);
             this.resultSection.style.display = 'block';
             this.resultSection.scrollIntoView({ behavior: 'smooth' });
+            this.showToast(`成功生成${titles.length}个标题`, 'success');
             
         } catch (error) {
             console.error('生成标题失败:', error);
-            this.showToast('生成标题失败，请稍后重试', 'error');
+            let errorMessage = '生成标题失败';
+            
+            // 根据不同的错误类型显示不同的提示
+            if (error.message.includes('API密钥')) {
+                errorMessage = '配置错误，请联系管理员';
+            } else if (error.message.includes('内容太短')) {
+                errorMessage = '内容太短，请提供更多内容';
+            } else if (error.message.includes('网络')) {
+                errorMessage = '网络连接失败，请稍后重试';
+            } else if (error.message.includes('超时')) {
+                errorMessage = '请求超时，请稍后重试';
+            } else {
+                errorMessage = error.message || '生成标题失败，请稍后重试';
+            }
+            
+            this.showToast(errorMessage, 'error');
         } finally {
             this.setLoading(false);
         }
@@ -220,7 +241,8 @@ class TitleGenerator {
         });
         
         if (!response.ok) {
-            throw new Error('标题生成失败');
+            const errorData = await response.json().catch(() => ({ error: '服务器错误' }));
+            throw new Error(errorData.error || `HTTP错误 ${response.status}`);
         }
         
         const result = await response.json();

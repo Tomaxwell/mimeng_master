@@ -12,11 +12,23 @@ const systemPrompt = fs.readFileSync(systemPromptPath, 'utf8');
  * @returns {Promise<Array>} - 生成的标题列表
  */
 async function generateTitlesWithDeepSeek(content) {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    // 重新加载环境变量以确保获取最新值
+    require('dotenv').config();
+    
+    let apiKey = process.env.DEEPSEEK_API_KEY;
     
     if (!apiKey) {
         throw new Error('请设置 DEEPSEEK_API_KEY 环境变量');
     }
+    
+    // 清理API密钥，只保留字母数字和连字符
+    apiKey = apiKey.toString().trim().replace(/[^\w-]/g, '');
+    
+    if (!apiKey || !apiKey.startsWith('sk-')) {
+        throw new Error('API密钥格式不正确，应该以sk-开头');
+    }
+    
+    console.log('API密钥验证通过，长度:', apiKey.length);
 
     try {
         // 构建完整的prompt
@@ -24,10 +36,17 @@ async function generateTitlesWithDeepSeek(content) {
 
         console.log('正在调用DeepSeek API生成标题...');
         
-        const response = await axios.post(
-            'https://api.deepseek.com/chat/completions',
-            {
-                model: 'deepseek-v3.1',
+        // 创建请求配置
+        const requestConfig = {
+            method: 'POST',
+            url: 'https://api.deepseek.com/chat/completions',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'MimengTitleGenerator/1.0'
+            },
+            data: {
+                model: 'deepseek-chat',
                 messages: [
                     {
                         role: 'user',
@@ -38,14 +57,21 @@ async function generateTitlesWithDeepSeek(content) {
                 max_tokens: 2000,
                 top_p: 0.9
             },
-            {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 60000 // 60秒超时
+            timeout: 60000, // 60秒超时
+            validateStatus: function (status) {
+                return status >= 200 && status < 500; // 不要对4xx状态抛出异常
             }
-        );
+        };
+        
+        console.log('发送请求到:', requestConfig.url);
+        const response = await axios(requestConfig);
+        
+        console.log('响应状态:', response.status);
+        
+        if (response.status !== 200) {
+            const errorMsg = response.data?.error?.message || `HTTP ${response.status}`;
+            throw new Error(`DeepSeek API调用失败: ${errorMsg}`);
+        }
 
         if (!response.data || !response.data.choices || response.data.choices.length === 0) {
             throw new Error('DeepSeek API返回数据格式错误');
