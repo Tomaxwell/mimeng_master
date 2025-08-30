@@ -13,16 +13,15 @@
       "dest": "/server.js"
     },
     {
+      "src": "/(style\\.css|script\\.js)",
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/server.js"
     }
   ],
   "env": {
-    "DEEPSEEK_API_KEY": "@deepseek-api-key"
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 60
-    }
+    "DEEPSEEK_API_KEY": "sk-f0d68aef9dbb4af19d4b8932a0bcd60d"
   }
 }
