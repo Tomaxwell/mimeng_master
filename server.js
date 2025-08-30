@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const axios = require('axios');
+const crypto = require('crypto');
 
 // 加载环境变量
 require('dotenv').config();
@@ -50,11 +51,70 @@ const { generateTitlesWithDeepSeek } = require('./utils/deepseekApi');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 创建日志目录
+const logsDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir);
+}
+
+// 请求日志记录函数
+function logRequest(req, res, next) {
+    const requestId = crypto.randomUUID();
+    const timestamp = new Date().toISOString();
+    
+    req.requestId = requestId;
+    req.startTime = Date.now();
+    
+    const logData = {
+        requestId,
+        timestamp,
+        method: req.method,
+        url: req.url,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip || req.connection.remoteAddress,
+        body: req.method === 'POST' ? req.body : null,
+        query: req.query
+    };
+    
+    // 记录请求日志
+    const requestLog = `${timestamp} [REQUEST] ${requestId} ${req.method} ${req.url}\n`;
+    fs.appendFileSync(path.join(logsDir, 'requests.log'), requestLog);
+    
+    // 详细日志
+    const detailLog = JSON.stringify(logData, null, 2) + '\n---\n';
+    fs.appendFileSync(path.join(logsDir, 'request-details.log'), detailLog);
+    
+    // 记录响应
+    const originalSend = res.send;
+    res.send = function(data) {
+        const responseTime = Date.now() - req.startTime;
+        const responseLog = {
+            requestId,
+            timestamp: new Date().toISOString(),
+            statusCode: res.statusCode,
+            responseTime: `${responseTime}ms`,
+            responseSize: Buffer.byteLength(data || ''),
+            response: typeof data === 'string' ? data : JSON.stringify(data)
+        };
+        
+        const responseLogLine = `${responseLog.timestamp} [RESPONSE] ${requestId} ${res.statusCode} ${responseTime}ms\n`;
+        fs.appendFileSync(path.join(logsDir, 'responses.log'), responseLogLine);
+        
+        const responseDetailLog = JSON.stringify(responseLog, null, 2) + '\n---\n';
+        fs.appendFileSync(path.join(logsDir, 'response-details.log'), responseDetailLog);
+        
+        originalSend.call(this, data);
+    };
+    
+    next();
+}
+
 // 中间件
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(express.static('.'));
+app.use(logRequest);
+app.use(express.static(__dirname));
 
 // 配置multer用于文件上传
 const storage = multer.diskStorage({
@@ -208,6 +268,65 @@ app.get('/debug', (req, res) => {
 // 前端测试页面
 app.get('/test', (req, res) => {
     res.sendFile(path.join(__dirname, 'test-frontend.html'));
+});
+
+// 获取网页标题接口
+app.post('/api/get-page-title', async (req, res) => {
+    try {
+        const { url } = req.body;
+        
+        if (!url) {
+            return res.status(400).json({ error: 'URL不能为空' });
+        }
+
+        console.log('获取网页标题:', url);
+        
+        const response = await axios.get(url, {
+            timeout: 10000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        const html = response.data;
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        
+        if (titleMatch && titleMatch[1]) {
+            const title = titleMatch[1].trim();
+            res.json({ title });
+        } else {
+            res.json({ title: null });
+        }
+        
+    } catch (error) {
+        console.error('获取网页标题错误:', error);
+        res.json({ title: null });
+    }
+});
+
+// 日志查看接口
+app.get('/api/logs', (req, res) => {
+    try {
+        const { type = 'requests', limit = 100 } = req.query;
+        const logFile = path.join(logsDir, `${type}.log`);
+        
+        if (!fs.existsSync(logFile)) {
+            return res.json({ logs: [], message: '暂无日志记录' });
+        }
+        
+        const logContent = fs.readFileSync(logFile, 'utf8');
+        const logs = logContent.split('\n').filter(line => line.trim()).slice(-limit);
+        
+        res.json({ 
+            logs,
+            total: logs.length,
+            type,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('日志读取错误:', error);
+        res.status(500).json({ error: '日志读取失败' });
+    }
 });
 
 // 错误处理中间件

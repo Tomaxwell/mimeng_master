@@ -4,6 +4,9 @@ class TitleGenerator {
         this.bindEvents();
         this.currentFile = null;
         this.currentTab = 'file';
+        this.sessions = JSON.parse(localStorage.getItem('titleSessions') || '[]');
+        this.currentSessionId = null;
+        this.loadSessions();
     }
 
     initElements() {
@@ -20,6 +23,11 @@ class TitleGenerator {
         this.titlesContainer = document.getElementById('titles-container');
         this.generateAgainBtn = document.getElementById('generate-again-btn');
         this.toast = document.getElementById('toast');
+        
+        // 侧边栏元素
+        this.newSessionBtn = document.getElementById('new-session-btn');
+        this.sessionList = document.getElementById('session-list');
+        this.currentSession = document.getElementById('current-session');
     }
 
     bindEvents() {
@@ -39,6 +47,9 @@ class TitleGenerator {
         // 生成按钮
         this.generateBtn.addEventListener('click', () => this.generateTitles());
         this.generateAgainBtn.addEventListener('click', () => this.generateTitles());
+        
+        // 会话管理
+        this.newSessionBtn.addEventListener('click', () => this.createNewSession());
     }
 
     switchTab(tabName) {
@@ -133,6 +144,7 @@ class TitleGenerator {
 
     async generateTitles() {
         let content = '';
+        let sessionTitle = '新会话';
         
         try {
             // 根据当前tab获取内容
@@ -142,6 +154,7 @@ class TitleGenerator {
                     return;
                 }
                 content = await this.extractFileContent(this.currentFile);
+                sessionTitle = await this.getFileSessionTitle(this.currentFile, content);
             } else if (this.currentTab === 'url') {
                 const url = this.urlInput.value.trim();
                 if (!url) {
@@ -149,12 +162,14 @@ class TitleGenerator {
                     return;
                 }
                 content = await this.fetchUrlContent(url);
+                sessionTitle = await this.getUrlSessionTitle(url);
             } else if (this.currentTab === 'text') {
                 content = this.textInput.value.trim();
                 if (!content) {
                     this.showToast('请输入文章内容', 'error');
                     return;
                 }
+                sessionTitle = this.getTextSessionTitle(content);
             }
 
             if (!content || content.length < 50) {
@@ -170,6 +185,9 @@ class TitleGenerator {
             }
             
             this.displayTitles(titles);
+            this.saveSessionResults(titles);
+            this.updateSessionTitle(sessionTitle);
+            this.saveSession();
             this.resultSection.style.display = 'block';
             this.resultSection.scrollIntoView({ behavior: 'smooth' });
             this.showToast(`成功生成${titles.length}个标题`, 'success');
@@ -342,6 +360,229 @@ class TitleGenerator {
         setTimeout(() => {
             this.toast.classList.remove('show');
         }, 3000);
+    }
+
+    // 会话管理方法
+    loadSessions() {
+        this.renderSessionList();
+        if (this.sessions.length === 0) {
+            this.createNewSession();
+        } else {
+            this.currentSessionId = this.sessions[0].id;
+            this.loadSession(this.currentSessionId);
+        }
+    }
+
+    createNewSession() {
+        const sessionId = 'session_' + Date.now();
+        const newSession = {
+            id: sessionId,
+            title: '新会话',
+            content: '',
+            results: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        this.sessions.unshift(newSession);
+        this.currentSessionId = sessionId;
+        this.saveSessionsToStorage();
+        this.renderSessionList();
+        this.clearContent();
+        this.resultSection.style.display = 'none';
+    }
+
+    loadSession(sessionId) {
+        const session = this.sessions.find(s => s.id === sessionId);
+        if (!session) return;
+        
+        this.currentSessionId = sessionId;
+        
+        // 加载会话内容
+        if (session.content) {
+            this.textInput.value = session.content;
+            this.switchTab('text');
+        }
+        
+        // 加载会话结果
+        if (session.results && session.results.length > 0) {
+            this.displayTitles(session.results);
+            this.resultSection.style.display = 'block';
+        } else {
+            this.resultSection.style.display = 'none';
+        }
+        
+        this.renderSessionList();
+    }
+
+    saveSession() {
+        if (!this.currentSessionId) return;
+        
+        const session = this.sessions.find(s => s.id === this.currentSessionId);
+        if (!session) return;
+        
+        // 更新会话内容
+        let content = '';
+        if (this.currentTab === 'text') {
+            content = this.textInput.value.trim();
+        } else if (this.currentTab === 'url') {
+            content = this.urlInput.value.trim();
+        }
+        
+        session.content = content;
+        session.updatedAt = new Date().toISOString();
+        
+        // 如果有标题，更新会话标题
+        if (content) {
+            const shortTitle = content.substring(0, 20) + (content.length > 20 ? '...' : '');
+            session.title = shortTitle || '新会话';
+        }
+        
+        this.saveSessionsToStorage();
+        this.renderSessionList();
+    }
+
+    saveSessionResults(titles) {
+        if (!this.currentSessionId) return;
+        
+        const session = this.sessions.find(s => s.id === this.currentSessionId);
+        if (!session) return;
+        
+        session.results = titles;
+        session.updatedAt = new Date().toISOString();
+        this.saveSessionsToStorage();
+    }
+
+    renderSessionList() {
+        // 渲染历史会话
+        this.sessionList.innerHTML = '';
+        
+        const historySessions = this.sessions.filter(s => s.id !== this.currentSessionId);
+        
+        historySessions.forEach(session => {
+            const sessionElement = this.createSessionElement(session);
+            this.sessionList.appendChild(sessionElement);
+        });
+        
+        // 渲染当前会话
+        const currentSession = this.sessions.find(s => s.id === this.currentSessionId);
+        if (currentSession) {
+            this.currentSession.innerHTML = '';
+            const currentElement = this.createSessionElement(currentSession, true);
+            this.currentSession.appendChild(currentElement);
+        }
+    }
+
+    createSessionElement(session, isCurrent = false) {
+        const sessionDiv = document.createElement('div');
+        sessionDiv.className = `session-item ${isCurrent ? 'active' : ''}`;
+        sessionDiv.dataset.sessionId = session.id;
+        
+        const timeAgo = this.formatTimeAgo(new Date(session.updatedAt));
+        
+        sessionDiv.innerHTML = `
+            <div class="session-title">${session.title}</div>
+            <div class="session-time">${timeAgo}</div>
+        `;
+        
+        if (!isCurrent) {
+            sessionDiv.addEventListener('click', () => this.loadSession(session.id));
+        }
+        
+        return sessionDiv;
+    }
+
+    formatTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return '刚刚';
+        if (diffMins < 60) return `${diffMins}分钟前`;
+        if (diffHours < 24) return `${diffHours}小时前`;
+        if (diffDays < 7) return `${diffDays}天前`;
+        return date.toLocaleDateString('zh-CN');
+    }
+
+    saveSessionsToStorage() {
+        localStorage.setItem('titleSessions', JSON.stringify(this.sessions));
+    }
+
+    clearContent() {
+        this.textInput.value = '';
+        this.urlInput.value = '';
+        this.removeFile();
+        this.titlesContainer.innerHTML = '';
+    }
+
+    // 会话标题生成方法
+    async getFileSessionTitle(file, content) {
+        try {
+            // 获取文件第一行作为标题
+            const firstLine = content.split('\n')[0].trim();
+            if (firstLine && firstLine.length > 0) {
+                return firstLine.substring(0, 40) + (firstLine.length > 40 ? '...' : '');
+            }
+            // 如果第一行为空，使用文件名
+            return file.name.replace(/\.[^/.]+$/, "").substring(0, 40);
+        } catch (error) {
+            return file.name.replace(/\.[^/.]+$/, "").substring(0, 40);
+        }
+    }
+
+    async getUrlSessionTitle(url) {
+        try {
+            // 尝试获取网页标题
+            const response = await fetch('/api/get-page-title', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.title) {
+                    return result.title.substring(0, 40) + (result.title.length > 40 ? '...' : '');
+                }
+            }
+            
+            // 备用方案：从URL中提取域名
+            const urlObj = new URL(url);
+            return urlObj.hostname + urlObj.pathname.substring(0, 20);
+        } catch (error) {
+            // 如果获取失败，使用URL的域名
+            try {
+                const urlObj = new URL(url);
+                return urlObj.hostname;
+            } catch {
+                return '链接内容';
+            }
+        }
+    }
+
+    getTextSessionTitle(content) {
+        // 获取文本第一行的前40个字符
+        const firstLine = content.split('\n')[0].trim();
+        if (firstLine && firstLine.length > 0) {
+            return firstLine.substring(0, 40) + (firstLine.length > 40 ? '...' : '');
+        }
+        return '文本内容';
+    }
+
+    updateSessionTitle(title) {
+        if (!this.currentSessionId) return;
+        
+        const session = this.sessions.find(s => s.id === this.currentSessionId);
+        if (session) {
+            session.title = title;
+            session.updatedAt = new Date().toISOString();
+            this.saveSessionsToStorage();
+            this.renderSessionList();
+        }
     }
 }
 

@@ -7,13 +7,42 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🔥 迷蒙标题生成大师</h1>
-            <p>基于咪蒙方法论，生成10万+爆款标题</p>
-        </header>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📝 标题生成器</h2>
+                <button class="new-session-btn" id="new-session-btn">
+                    ➕ 新会话
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="session-section">
+                    <h3>当前会话</h3>
+                    <div class="current-session" id="current-session">
+                        <div class="session-item active">
+                            <div class="session-title">新会话</div>
+                            <div class="session-time">刚刚</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="history-section">
+                    <h3>历史会话</h3>
+                    <div class="session-list" id="session-list">
+                        <!-- 历史会话将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-        <main>
+        <main class="main-content">
+            <div class="session-header">
+                <h1>🔥 迷蒙标题生成大师</h1>
+                <p>基于咪蒙方法论，生成10万+爆款标题</p>
+            </div>
+
+            <div class="content-area">
             <div class="input-section">
                 <div class="tab-container">
                     <button class="tab-btn active" data-tab="file">📄 上传文件</button>
@@ -65,10 +94,6 @@
                 </div>
             </div>
         </main>
-
-        <footer>
-            <p>基于咪蒙标题方法论 • 使用DeepSeek V3.1 API</p>
-        </footer>
     </div>
 
     <div class="toast" id="toast"></div>
